@@ -1,11 +1,15 @@
 package pl.javastart.controller;
 
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import pl.javastart.model.City;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -34,12 +38,27 @@ public class CityController {
     }
 
     @GetMapping("/{id}")
-    public City getCity(@PathVariable int id){
-        return cities.get(id);
+    public ResponseEntity<Object> getCity(@PathVariable int id) {
+        if (id > cities.size() || id < 0) {
+            return ResponseEntity.notFound().build();
+        } else {
+            City city = cities.get(id);
+            return ResponseEntity.ok(city);
+        }
     }
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-    public void saveCity(@RequestBody City city){
-        cities.add(city);
+    public ResponseEntity<?> saveCity(@RequestBody City city) {
+        if (!cities.contains(city)) {
+            cities.add(city);
+            URI location = ServletUriComponentsBuilder
+                    .fromCurrentRequest()
+                    .path("/{id}")
+                    .buildAndExpand(cities.size()-1)
+                    .toUri();
+            return ResponseEntity.created(location).body(city);
+        }else{
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        }
     }
 }
